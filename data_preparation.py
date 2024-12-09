@@ -3,6 +3,7 @@ import torch
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
 import numpy as np
+import os
 
 def load_dataset(name, batch_size):
     transform = transforms.Compose([
@@ -16,9 +17,26 @@ def load_dataset(name, batch_size):
     elif name == "CIFAR10":
         dataset = datasets.CIFAR10(root="./data", train=True, download=True, transform=transform)
         test_dataset = datasets.CIFAR10(root="./data", train=False, download=True, transform=transform)
+    elif name == "CIFAR100":
+        transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.5071, 0.4867, 0.4408], std=[0.2675, 0.2565, 0.2761])
+        ])
+        dataset = datasets.CIFAR100(root="./data", train=True, download=True, transform=transform)
+        test_dataset = datasets.CIFAR100(root="./data", train=False, download=True, transform=transform)
+    elif name == "TinyImageNet":
+        transform = transforms.Compose([
+            transforms.RandomRotation(20),
+            transforms.RandomHorizontalFlip(0.5),
+            transforms.ToTensor(),
+            transforms.Normalize([0.4802, 0.4481, 0.3975], [0.2302, 0.2265, 0.2262])
+        ])
+        data_dir = "./data/tiny-224/"
+        dataset = datasets.ImageFolder(os.path.join(data_dir, "train"), transform=transform)
+        test_dataset = datasets.ImageFolder(os.path.join(data_dir, "test"), transform=transform)
     else:
         raise ValueError("Unsupported dataset")
-
+    
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     return dataset, test_loader
 

@@ -7,7 +7,7 @@ class Validator:
 
     Attributes:
         test_loader (torch.utils.data.DataLoader): DataLoader for the validation dataset.
-        device (torch.device): Device to perform computations (e.g., 'cpu' or 'cuda').
+        device (torch.device): Device to perform computations (e.g., 'cpu', 'mps' or 'cuda').
     """
     def __init__(self, test_loader, device):
         self.test_loader = test_loader

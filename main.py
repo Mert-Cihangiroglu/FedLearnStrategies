@@ -13,10 +13,25 @@ warnings.filterwarnings("ignore")
 # Set up device
 device = get_device()
 
+# Mapping datasets to the number of output classes
+DATASET_OUTPUT_CLASSES = {
+    "MNIST": 10,
+    "CIFAR10": 10,
+    "CIFAR100": 100,
+    "TinyImageNet": 200
+}
+
+DATASET_INPUT_CHANNELS = {
+    "MNIST": 1,        # Grayscale images
+    "CIFAR10": 3,      # RGB images
+    "CIFAR100": 3,     # RGB images
+    "TinyImageNet": 3  # RGB images
+}
+
 # Experiment configurations
 experiments = [
     {
-        "dataset": "CIFAR10",
+        "dataset": dataset,
         "batch_size": 64,
         "data_distribution": "Dirichlet",
         "alpha": alpha,
@@ -25,9 +40,10 @@ experiments = [
         "local_epochs": 10,
         "learning_rate": 0.01,
         "aggregation": method,
-        "output_classes": 10,
+        "output_classes": DATASET_OUTPUT_CLASSES[dataset],  # Dynamically set output classes
         "mu": 0.01 if method == "FedProx" else 0.0
     }
+    for dataset in [ "CIFAR100", "TinyImageNet"]  # Add datasets dynamically
     for alpha in [0.125, 0.3, 0.5, 0.75, 1.0]
     for method in ["FedAvg", "FedProx", "FedNova", "SCAFFOLD"]
 ]
@@ -58,8 +74,12 @@ for exp_idx, config in enumerate(experiments):
         for i in range(config["num_clients"])
     ]
 
-    # Initialize global model and validator
-    global_model = get_model(output_classes=config["output_classes"])
+    # Dynamically create the model
+    dataset_name = config["dataset"]
+    input_channels = DATASET_INPUT_CHANNELS[dataset_name]
+    output_classes = config["output_classes"]
+
+    global_model = get_model(output_classes=output_classes, input_channels=input_channels)
     validator = Validator(test_loader=test_loader, device=device)
 
     # Run federated learning rounds
