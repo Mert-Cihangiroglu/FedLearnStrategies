@@ -1,0 +1,59 @@
+# Python Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment Files
+env/
+venv/
+ENV/
+*.env
+*.venv
+
+# Virtual Environment
+.Python
+
+# Distribution / Packaging
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Logs and Temporary Files
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
+*.orig
+*.DS_Store
+
+# Test Files
+.cache/
+coverage/
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+
+# IDE Specific
+.vscode/
+.idea/
+*.spyderproject
+*.spyproject
+
+# Mypy
+.mypy_cache/
+.dmypy.json
+
+# Other
+*.sqlite3
+
+# Data
+data
+
+#Results 
+results.json
+accuracy_trends.png
