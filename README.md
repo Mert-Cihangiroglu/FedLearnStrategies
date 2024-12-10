@@ -1,7 +1,7 @@
 
 # Federated Learning Aggregation Strategies Benchmark
 
-This repository is part of my research project aimed at benchmarking federated learning aggregation strategies, specifically **FedAvg**, **FedProx**, **FedNova**, and **SCAFFOLD**. The goal is to compare their performance under different conditions and evaluate their suitability for various real-world scenarios.
+This repository is part of my research project aimed at benchmarking federated learning aggregation strategies, specifically **FedAvg**, **FedProx**, **FedNova**, and **SCAFFOLD**. The goal is to compare their performance under different data distribution scenarios.
 
 ---
 
