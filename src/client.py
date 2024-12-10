@@ -52,7 +52,7 @@ class Client:
                 optimizer.zero_grad()
                 
                 output = model(data)
-                loss = criterion(output, target)
+                loss = criterion(output, target.type(torch.int64))
 
                 # FedProx-specific proximal term
                 if mu > 0.0:

@@ -43,7 +43,7 @@ experiments = [
         "output_classes": DATASET_OUTPUT_CLASSES[dataset],  # Dynamically set output classes
         "mu": 0.01 if method == "FedProx" else 0.0
     }
-    for dataset in [ "CIFAR100", "TinyImageNet"]  # Add datasets dynamically
+    for dataset in [ "CIFAR10", "CIFAR100", "TinyImageNet"]  # Add datasets dynamically
     for alpha in [0.125, 0.3, 0.5, 0.75, 1.0]
     for method in ["FedAvg", "FedProx", "FedNova", "SCAFFOLD"]
 ]
