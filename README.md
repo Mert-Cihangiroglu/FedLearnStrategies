@@ -49,7 +49,7 @@ Each component is modular and easy to adapt:
 ### Preparing Tiny ImageNet
 For experiments involving Tiny ImageNet, ensure the dataset is prepared by running:
 ```bash
-python tiny-image-net-downloader.py
+python tiny_image_net_downloader.py
 ```
 After running this script, place the generated `tiny-224` folder under the `data` directory.
 
