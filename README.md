@@ -31,7 +31,7 @@ Each component is modular and easy to adapt:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/federated-learning-benchmark.git
+   git clone https://github.com/Mert-Cihangiroglu/FedLearnStrategies.git
    cd federated-learning-benchmark
    ```
 
