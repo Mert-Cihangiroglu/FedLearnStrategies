@@ -97,17 +97,32 @@ federated-learning-benchmark/
 ## Aggregation Strategies Overview
 
 ### FedAvg
-Averages client updates without considering heterogeneity. Simple and effective for homogeneous setups.
+**Formula**:
+\[
+w_{t+1} = \frac{1}{N} \sum_{i=1}^{N} w_{t}^{i}
+\]
+FedAvg performs a simple averaging of the weights or gradients from all participating clients. It is effective in homogeneous setups where the data distribution and model architectures across clients are similar.
 
 ### FedProx
-Adds a regularization term to reduce update divergence among clients, making it more robust in heterogeneous environments.
+**Formula**:
+\[
+L_{i}(w) = f_{i}(w) + \frac{\mu}{2} \| w - w_{t} \|^{2}
+\]
+FedProx introduces a proximal term \( \frac{\mu}{2} \| w - w_{t} \|^{2} \) in the local objective to prevent client updates from deviating significantly from the global model. 
 
 ### FedNova
-Balances updates by normalizing them based on client contributions, addressing imbalances in data and computational power.
+**Formula**:
+\[
+w_{t+1} = \sum_{i=1}^{N} \frac{n_{i} w_{t}^{i}}{\sum_{i=1}^{N} n_{i}}
+\]
+FedNova normalizes the updates based on client contributions, where \( n_{i} \) is the number of data samples on client \( i \). This method addresses imbalances in data volume and computational power among clients.
 
 ### SCAFFOLD
-Uses control variates to correct updates and reduce variance, especially under non-IID distributions.
-
+**Formula**:
+\[
+w_{t+1} = w_{t} + \eta \sum_{i=1}^{N} \frac{n_{i}}{n} \big( g_{i} - c_{i} + c \big)
+\]
+SCAFFOLD uses control variates \( c_{i} \) (local) and \( c \) (global) to correct client updates and reduce variance, especially in non-IID scenarios. The update includes a variance-reduction term \( g_{i} - c_{i} + c \), where \( g_{i} \) is the local gradient.
 ---
 
 ## Experiments
