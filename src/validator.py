@@ -35,6 +35,11 @@ class Validator:
             for data, target in self.test_loader:
                 data, target = data.to(self.device), target.to(self.device)
                 outputs = model(data)
+                
+                # Ensure target is 1D (squeeze for MedMNIST)
+                if target.dim() > 1:
+                    target = target.squeeze()
+                    
                 loss = criterion(outputs, target.type(torch.int64))
                 total_loss += loss.item()
                 _, predicted = torch.max(outputs.data, 1)
