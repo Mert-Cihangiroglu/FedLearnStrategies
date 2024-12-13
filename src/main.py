@@ -6,8 +6,14 @@ from model import get_model
 from client import Client
 from validator import Validator
 from aggregation import fedavg_aggregation, fedprox_aggregation, fednova_aggregation, scaffold_aggregation
+from backdoor_strategy import BackdoorStrategy
 import warnings
+import random
+import os
 warnings.filterwarnings("ignore")
+
+# Ensure results directory exists
+os.makedirs("results", exist_ok=True)
 
 
 # Set up device
@@ -18,14 +24,22 @@ DATASET_OUTPUT_CLASSES = {
     "MNIST": 10,
     "CIFAR10": 10,
     "CIFAR100": 100,
-    "TinyImageNet": 200
+    "TinyImageNet": 200,
+    "pathmnist": 9,                # 9 tissue types
+    "organmnist_axial": 11,        # 11 organ types
+    "organmnist_coronal": 11,      # 11 organ types
+    "organmnist_sagittal": 11      # 11 organ types
 }
 
 DATASET_INPUT_CHANNELS = {
-    "MNIST": 1,        # Grayscale images
-    "CIFAR10": 3,      # RGB images
-    "CIFAR100": 3,     # RGB images
-    "TinyImageNet": 3  # RGB images
+    "MNIST": 1,                   # Grayscale images
+    "CIFAR10": 3,                 # RGB images
+    "CIFAR100": 3,                # RGB images
+    "TinyImageNet": 3,            # RGB images
+    "pathmnist": 3,               # RGB images (3 channels)
+    "organmnist_axial": 1,        # Grayscale (1 channel)
+    "organmnist_coronal": 1,      # Grayscale (1 channel)
+    "organmnist_sagittal": 1      # Grayscale (1 channel)
 }
 
 # Experiment configurations
@@ -41,12 +55,17 @@ experiments = [
         "learning_rate": 0.01,
         "aggregation": method,
         "output_classes": DATASET_OUTPUT_CLASSES[dataset],  # Dynamically set output classes
-        "mu": 0.01 if method == "FedProx" else 0.0
+        "mu": 0.01 if method == "FedProx" else 0.0,
+        "attack_type": "None",  # Specify attack type (None for no attack, "backdoor" for backdoor attacks)
+        "malicious_client_percentage": 0.2,  # 20% malicious clients
+        "backdoor_target": 7,  # Target label for backdoor attack
+        "backdoor_percentage": 0.3  # 30% of data poisoned for malicious clients
     }
-    for dataset in [ "CIFAR10", "CIFAR100", "TinyImageNet"]  # Add datasets dynamically
+    for dataset in ["pathmnist","organmnist_axial", "organmnist_coronal", "organmnist_sagittal","CIFAR10", "CIFAR100", "TinyImageNet"]
     for alpha in [0.125, 0.3, 0.5, 0.75, 1.0]
     for method in ["FedAvg", "FedProx", "FedNova", "SCAFFOLD"]
 ]
+
 
 results = []
 
@@ -67,13 +86,34 @@ for exp_idx, config in enumerate(experiments):
 
     # Create client data loaders
     client_loaders = create_data_loaders(client_data, config["batch_size"])
+    
+    # Initialize attack settings
+    malicious_client_ids = []
+    backdoor_strategy = None
+    
+    if config["attack_type"] == "backdoor":
+        # Initialize backdoor strategy
+        backdoor_strategy = BackdoorStrategy(trigger_type="square", triggerX=25, triggerY=25)
+
+        # Randomly select malicious clients
+        num_malicious_clients = int(config["num_clients"] * config["malicious_client_percentage"])
+        malicious_client_ids = random.sample(range(config["num_clients"]), num_malicious_clients)
 
     # Initialize clients
-    clients = [
-        Client(client_id=i, data_loader=client_loaders[i], device=device)
-        for i in range(config["num_clients"])
-    ]
-
+    clients = []
+    for i in range(config["num_clients"]):
+        is_malicious = i in malicious_client_ids
+        clients.append(Client(
+            client_id=i,
+            data_loader=client_loaders[i],
+            device=device,
+            is_malicious=is_malicious,
+            attack_type=config["attack_type"] if is_malicious else None,
+            backdoor_strategy=backdoor_strategy if is_malicious else None,
+            backdoor_percentage=config["backdoor_percentage"] if is_malicious else 0.0,
+            backdoor_target=config["backdoor_target"] if is_malicious else None
+        ))
+    
     # Dynamically create the model
     dataset_name = config["dataset"]
     input_channels = DATASET_INPUT_CHANNELS[dataset_name]
@@ -131,10 +171,20 @@ for exp_idx, config in enumerate(experiments):
     })
 
     print(f"Experiment {exp_idx + 1} complete.\n")
+    
+        # Save results for this experiment
+    experiment_result = {
+        "experiment": config,
+        "metrics": round_metrics
+    }
+    
+    # Create unique filename based on experiment configuration
+    filename = f"results/results_{config['dataset']}_alpha{config['alpha']}_method{config['aggregation']}_isAttack_{config['attack_type']}.json".replace(".", "_")
+    with open(filename, "w") as results_file:
+        import json
+        json.dump(experiment_result, results_file)
 
-# Save all results
-with open("results.json", "w") as results_file:
-    import json
-    json.dump(results, results_file)
+    print(f"Experiment {exp_idx + 1} complete. Results saved to {filename}\n")
+
 
 print("All experiments complete. Results saved to results.json.")

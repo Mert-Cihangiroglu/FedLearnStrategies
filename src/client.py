@@ -3,6 +3,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from backdoor_strategy import BackdoorStrategy
+
 
 class Client:
     """
@@ -13,11 +15,37 @@ class Client:
         data_loader (torch.utils.data.DataLoader): Data loader for the client's local data.
         device (torch.device): Device to perform computations (e.g., 'cpu' or 'cuda').
     """
-    def __init__(self, client_id, data_loader, device):
+    def __init__(self, client_id, data_loader, device, 
+                 is_malicious=False, 
+                 attack_type=None, 
+                 backdoor_strategy=None, 
+                 backdoor_percentage=0.0, 
+                 backdoor_target=0):
+        
         self.client_id = client_id
         self.data_loader = data_loader
         self.device = device
         self.control_variates = {}  # For SCAFFOLD
+        
+        #Attack Settings
+        self.is_malicious = is_malicious
+        self.attack_type = attack_type
+        self.backdoor_strategy = backdoor_strategy
+        self.backdoor_percentage = backdoor_percentage
+        self.backdoor_target = backdoor_target
+    
+    def _apply_backdoor_attack(self, data, target):
+        """
+        Applies the backdoor attack by modifying a subset of data and setting backdoored labels.
+
+        Parameters:
+            data (torch.Tensor): Batch of input data.
+            target (torch.Tensor): Batch of target labels.
+        """
+        num_to_poison = int(len(data) * self.backdoor_percentage)
+        for i in range(num_to_poison):
+            data[i] = self.backdoor_strategy.add_backdoor(data[i])
+            target[i] = self.backdoor_target  # Assign backdoored label
 
     def local_train(self, model, epochs, criterion, optimizer, strategy_params=None):
         """
@@ -51,6 +79,14 @@ class Client:
                 data, target = data.to(self.device), target.to(self.device)
                 optimizer.zero_grad()
                 
+                # Ensure target is 1D (squeeze for MedMNIST)
+                if target.dim() > 1:
+                    target = target.squeeze()
+
+                # Handle the attack based on attack type
+                if self.is_malicious and self.attack_type == "backdoor" and self.backdoor_strategy:
+                    self._apply_backdoor_attack(data, target)
+                
                 output = model(data)
                 loss = criterion(output, target.type(torch.int64))
 
@@ -79,7 +115,7 @@ class Client:
                 self.control_variates[name] += param.grad.data.clone()
 
         return model.state_dict()
-
+    
 # Example Usage
 if __name__ == "__main__":
     # Dummy dataset and model for demonstration

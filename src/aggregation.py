@@ -20,6 +20,34 @@ def fedavg_aggregation(client_models, client_sizes):
 
     return global_model
 
+def fed_avg_aggregation(local_models):
+    """
+    Performs FedAvg aggregation on a list of local models.
+    
+    Parameters:
+        local_models (list[torch.nn.Module]): List of local models.
+    
+    Returns:
+        torch.nn.Module: Aggregated global model.
+    """
+    # Clone the state_dict of the first model to initialize the global model's state
+    global_state_dict = copy.deepcopy(local_models[0].state_dict())
+
+    # Iterate over each parameter key in the state_dict
+    for key in global_state_dict.keys():
+        # Compute the mean of the parameter values across all local models
+        global_state_dict[key] = torch.mean(
+            torch.stack([model.state_dict()[key].float() for model in local_models]), dim=0
+        )
+    
+    # Create a deep copy of the first local model to serve as the global model
+    global_model = copy.deepcopy(local_models[0])
+
+    # Load the aggregated state_dict into the global model
+    global_model.load_state_dict(global_state_dict)
+
+    return global_model
+
 def fedprox_aggregation(client_models, client_sizes, mu):
     """
     Perform FedProx aggregation, incorporating proximal term.

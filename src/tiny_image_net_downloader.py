@@ -114,7 +114,7 @@ shutil.copytree(DATASET_DIR, RESIZED_DIR)
 
 
 # Resize images to 224x224
-def resize_img(image_path: Path, size: int = 224) -> None:
+def resize_img(image_path: Path, size: int = 64) -> None:
     img = cv2.imread(image_path.as_posix())
     img = cv2.resize(img, (size, size), interpolation=cv2.INTER_CUBIC)
     cv2.imwrite(image_path.as_posix(), img)

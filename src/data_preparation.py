@@ -2,6 +2,7 @@
 import torch
 from torch.utils.data import DataLoader, Subset
 from torchvision import datasets, transforms
+from medmnist.dataset import PathMNIST, OrganMNISTAxial, OrganMNISTCoronal, OrganMNISTSagittal
 import numpy as np
 import os
 
@@ -26,6 +27,7 @@ def load_dataset(name, batch_size):
         test_dataset = datasets.CIFAR100(root="./data", train=False, download=True, transform=transform)
     elif name == "TinyImageNet":
         transform = transforms.Compose([
+            transforms.Resize((64, 64)),
             transforms.RandomRotation(20),
             transforms.RandomHorizontalFlip(0.5),
             transforms.ToTensor(),
@@ -34,6 +36,18 @@ def load_dataset(name, batch_size):
         data_dir = "./data/tiny-224/"
         dataset = datasets.ImageFolder(os.path.join(data_dir, "train"), transform=transform)
         test_dataset = datasets.ImageFolder(os.path.join(data_dir, "test"), transform=transform)
+    elif name == "pathmnist":
+        dataset = PathMNIST(split="train", transform=transform, download=True)
+        test_dataset = PathMNIST(split="test", transform=transform, download=True)
+    elif name == "organmnist_axial":
+        dataset = OrganMNISTAxial(split="train", transform=transform, download=True)
+        test_dataset = OrganMNISTAxial(split="test", transform=transform, download=True)
+    elif name == "organmnist_coronal":
+        dataset = OrganMNISTCoronal(split="train", transform=transform, download=True)
+        test_dataset = OrganMNISTCoronal(split="test", transform=transform, download=True)
+    elif name == "organmnist_sagittal":
+        dataset = OrganMNISTSagittal(split="train", transform=transform, download=True)
+        test_dataset = OrganMNISTSagittal(split="test", transform=transform, download=True)
     else:
         raise ValueError("Unsupported dataset")
     
@@ -44,6 +58,32 @@ def partition_data_iid(dataset, num_clients):
     total_samples = len(dataset)
     indices = np.random.permutation(total_samples)
     split_indices = np.array_split(indices, num_clients)
+    return [Subset(dataset, idx) for idx in split_indices]
+
+def partition_data_iid(dataset, num_clients):
+    """
+    Partition dataset into IID subsets.
+
+    Parameters:
+        dataset (Dataset): PyTorch or MedMNIST dataset to partition.
+        num_clients (int): Number of clients.
+
+    Returns:
+        list[Subset]: List of PyTorch Subset objects, one for each client.
+    """
+    # Get the total number of samples
+    if hasattr(dataset, 'targets'):  # Standard datasets (e.g., MNIST, CIFAR)
+        total_samples = len(dataset.targets)
+    elif hasattr(dataset, 'labels'):  # MedMNIST datasets
+        total_samples = len(dataset.labels)
+    else:
+        raise ValueError("Dataset does not have 'targets' or 'labels' attribute.")
+    
+    # Randomly shuffle indices and split into equal parts
+    indices = np.random.permutation(total_samples)
+    split_indices = np.array_split(indices, num_clients)
+    
+    # Return subsets for each client
     return [Subset(dataset, idx) for idx in split_indices]
 
 def partition_data_dirichlet(dataset, num_clients, alpha, seed=42):
@@ -62,7 +102,14 @@ def partition_data_dirichlet(dataset, num_clients, alpha, seed=42):
     # Set random seed
     np.random.seed(seed)
 
-    labels = np.array(dataset.targets)
+        # Get the total number of samples
+    if hasattr(dataset, 'targets'):  # Standard datasets (e.g., MNIST, CIFAR)
+        labels = dataset.targets
+    elif hasattr(dataset, 'labels'):  # MedMNIST datasets
+        labels = dataset.labels
+        print(labels)
+    else:
+        raise ValueError("Dataset does not have 'targets' or 'labels' attribute.")
     num_classes = len(np.unique(labels))
     class_indices = [np.where(labels == i)[0] for i in range(num_classes)]
 
